@@ -1,0 +1,39 @@
+h1. Overlapping Marker Spiderfier for the Google Maps Android API v2
+
+This code is an attempt to reproduce an excellent code by "jawj":https://github.com/jawj in java, intended to be used on *Android*, alongside "android-maps-extensions":https://code.google.com/p/android-maps-extensions/ .
+ 
+For a thorough documentation please refer to "jawj's repository":https://github.com/jawj/OverlappingMarkerSpiderfier/blob/master/README.textile
+
+This code was last updated on *20/02/14*.
+ 
+h2. Disclaimer
+
+h3. THIS IS AN ALPHA VERSION
+
+Before proceeding to read \ use the code please consider the following:
+
+# I have limited experience with Java, Andriod and the various Maps APIs. Being a __Mechanical__ Engineer I worked quite a lot on MATLAB, but hey - I'm not in Kansas anymore.
+# I had absolutely *zero* knowledge in javascript and coffee script when undertaking this. It is __very__ likely that *some things got lost in translation*.
+# I was following the original order of the coffee script (more or less) I pretty much worked blindly without much filtering of what's releant to android and what's not so - *expect some redundant code*. The upside of this method is, however, that the original comments\documentation apply quite well.
+# Any relation between what you are about to see and "__proper__" java code is purely coincidential. Make sure you're sitting before proceeding.
+# The code is absolutely unoptimized in terms of memory\performance.
+# Any functionality customizations (such as Polyline properties, radii, etc.) must currently be changed via hardcoding.
+# This code was tested in the following conditions:
+## Device: Galaxy Nexus running a CyanogenMod 11 nightly. *Expect the code to require modifications for other devices*.
+## Map clutter: ~500 markers.
+
+Having managed your expectations, this code does:
+# Work. And is very stable at that - inside are merely 2 try-catch blocks, which I'm not even sure are even needed.
+# Has huge room for improvement if you're up for it. Any help will be appreciated!
+
+h2. How to use
+
+Just put it in your project and instantiate like so: @oms = new OverlappingMarkerSpiderfier(mMap);@
+
+Notes:
+# This class Overrides the map's @OnCameraChangeListener@ (unspiderfication is performed on zoom change). If you have your own listener, just move the code from the class' built-in listener to your own.
+# The user is assumed to be working with *android-maps-extensions*.
+
+h2. License
+
+This software is released under the "APACHE LICENSE 2.0":http://www.apache.org/licenses/LICENSE-2.0.
