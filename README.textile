@@ -44,7 +44,8 @@ Notes:
 * The developer is assumed to be working with *android-maps-extensions*.
 
 h3. Expected Functionality
-Before: !http://imagizer.imageshack.us/v2/800x600q90/842/7tv8.png! After: !http://imagizer.imageshack.us/v2/800x600q90/208/zaun.png!
+Before & After:
+!http://imagizer.imageshack.us/v2/800x600q90/842/7tv8.png!__!http://imagizer.imageshack.us/v2/800x600q90/208/zaun.png!
 * Spiderfication only works on @instanceof ClusterMarker@.
 * Unspiderfication is performed on zoom level change (hence the aforementioned listener override).
 
