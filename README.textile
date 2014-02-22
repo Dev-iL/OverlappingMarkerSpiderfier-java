@@ -1,10 +1,10 @@
-h1. Overlapping Marker Spiderfier for the Google Maps Android API v2
+h1. Overlapping Marker Spiderfier for Android (Android Maps Extensions)
 
 This code is an attempt to reproduce an excellent code by "jawj":https://github.com/jawj, in Java, intended to be used on *Android*, alongside the excellent "android-maps-extensions":https://code.google.com/p/android-maps-extensions/.
  
 For a *thorough* documentation please refer to "jawj's OverlappingMarkerSpiderfier repository":https://github.com/jawj/OverlappingMarkerSpiderfier/blob/master/README.textile.
 
-This code was last updated on *20/02/14*.
+This code was last updated on *22/02/14*.
 
 The code was written while adding pyrotechnics to the "Blue Card Android app":https://play.google.com/store/apps/details?id=gidutz.soft.bluecard I'm working on.
 (At the time of writing, this and many other features are not yet found in the version released on Google Play. Also, it is in Hebrew.)
@@ -16,7 +16,7 @@ h3. THIS IS AN ALPHA VERSION
 Before proceeding to read \ use the code, please consider the following:
 
 # I have limited experience with Java, Android and the various Maps APIs. Being a __Mechanical__ Engineer I worked quite a lot on MATLAB, but hey - I'm not in Kansas anymore.
-# I had absolutely *zero* knowledge in JavaScript (_JS_) and CoffeeScript (_CS_) when undertaking this. It is _very_ likely that *some things got lost in translation*.
+# I had absolutely *zero* knowledge in JavaScript (__JS__) and CoffeeScript (__CS__) when undertaking this. It is _very_ likely that *some things got lost in translation*.
 # I was following the original flow of the CS (more or less). I pretty much worked blindly without much filtering of what's relevant to Android and what's not so *expect some redundant code*. The upside of this method is, however, that the original comments\documentation apply quite well.
 # Any relation between what you are about to see and "_proper_" Java code is purely coincidental. Make sure you're sitting before proceeding.
 # The code is absolutely unoptimized in terms of memory\performance.
