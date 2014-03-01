@@ -16,17 +16,14 @@
    Based on the work of George MacKerron @ https://github.com/jawj/OverlappingMarkerSpiderfier
 
    Attempt was made to stick to the original method and variable names and to include most of the original comments.
-   Last-modified date: 22/02/14
+   Last-modified date: 01/03/14
 
    Note: this version is intended to work with android-maps-extensions.
  */
 
 package ;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 import android.graphics.Color;
 import android.graphics.Point;
@@ -34,7 +31,6 @@ import com.androidmapsextensions.*;
 import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
 
 public class OverlappingMarkerSpiderfier {
 
@@ -75,7 +71,7 @@ public class OverlappingMarkerSpiderfier {
     private boolean markersWontMove = false;
 
     /** nearbyDistance is the pixel radius within which a marker is considered to be overlapping a clicked marker. */
-    private int nearbyDistance = 20;
+    private int nearbyDistance = 20; //this is important when spiderfying unclustered markers.. I think..
 
     /** circleSpiralSwitchover is the lowest number of markers that will be fanned out into a spiral instead of a circle.
      0 -> always spiral; Infinity -> always circle. */
@@ -182,13 +178,15 @@ public class OverlappingMarkerSpiderfier {
 
     }*/
 
-    private List<Marker> markersInCluster;
+    //the following lists are initialized later
+    private List<Marker> markersInCluster; // refers to the current clicked cluster
     private List<Marker> displayedMarkers;
-    private Marker lastSpiderfiedCluster;
+    private List<Marker> spiderfiedClusters; // as the name suggests
+    private List<Marker> spiderfiedUnclusteredMarkers; // intended to hold makers that were tightly packed but not clustered before spiderfying
 
-    private boolean spiderfying = false;
-    private boolean unspiderfying = false;
-    private boolean firstonly = true; //TODO: Remove if unneeded
+    private boolean spiderfying = false;   //needed for recursive spiderfication
+    private boolean unspiderfying = false; // TODO: check if needed for recursive unspiderfication
+    private boolean isAnythingSpiderfied = false;
     private float zoomLevelOnLastSpiderfy;
 
     private HashMap<Marker,_omsData> omsData= new HashMap<Marker, _omsData>();
@@ -211,22 +209,22 @@ public class OverlappingMarkerSpiderfier {
         gm.setOnCameraChangeListener(new GoogleMap.OnCameraChangeListener() {
             @Override
             public void onCameraChange(CameraPosition cameraPosition) {
-                if(lastSpiderfiedCluster !=null && cameraPosition.zoom != zoomLevelOnLastSpiderfy){
-                    unspiderfy(lastSpiderfiedCluster);
-                    lastSpiderfiedCluster =null;
-                }
+                if(spiderfiedClusters.size()>0 && cameraPosition.zoom != zoomLevelOnLastSpiderfy)
+                    unspiderfyAll();
             }
         });
     }
 
     /** Corresponds to line 61 of original code*/
-    private void initMarkerArrays(){
+    private void initMarkerArrays(){ //TODO: call on unspiderfyall?
         markersInCluster = new ArrayList<Marker>();
         displayedMarkers = new ArrayList<Marker>();
+        spiderfiedClusters = new ArrayList<Marker>();
+        spiderfiedUnclusteredMarkers = new ArrayList<Marker>();
     }
 
     /** Corresponds to line 65 of original code
-     *  Adds marker to be tracked.*/
+     *  Adds marker to be tracked.*/ /*
     private Marker addMarker(Marker marker){
         if(!isSpiderfyalbe(marker)){
 //          markerListenerRefs = [ge.addListener(marker, 'click', (event) => @spiderListener(marker, event))]
@@ -245,14 +243,14 @@ public class OverlappingMarkerSpiderfier {
         }
         return marker;
     }
-
-    /** Corresponds to line 77 of original code*/
+*/
+    /** Corresponds to line 77 of original code*//*
     private void markerChangeListener(Marker marker,String action, boolean positionChanged){
         if (omsData.containsKey(marker) && (positionChanged || !marker.isVisible()) && !(spiderfying || unspiderfying) ){
             unspiderfy(positionChanged ? marker : null);
         }
     }
-
+*/
     /** Corresponds to line 81 of original code*//*
     private List<Marker> getMarkersInCluster(){
         //  Meant to return a COPY of the original markersInCluster' list; Currently, this is a SHALLOW copy and might cause problems.
@@ -278,7 +276,7 @@ public class OverlappingMarkerSpiderfier {
     /** Corresponds to line 93 of original code
      * Removes every marker from being tracked. Much quicker than calling removeMarker in a loop, since that has
      * to search the markers array every time. This does not remove the markers from the map (to remove the markers
-     * from the map you must call setMap(null) on each of them, as per usual).*/
+     * from the map you must call setMap(null) on each of them, as per usual).*//*
     private void clearMarkers(){
         for (Marker marker : markersInCluster) {
             // Remove listeners (methinks this is redundant in java due to "garbage collection")
@@ -286,7 +284,7 @@ public class OverlappingMarkerSpiderfier {
         }
         initMarkerArrays();
     }
-
+*/
     /**
      * Lines 102-117 in original code seems irrelevant in java
      */
@@ -320,46 +318,68 @@ public class OverlappingMarkerSpiderfier {
     }
 
     public void spiderListener(Marker cluster){ /** Corresponds to line 138 of original code*/
-    //TODO this should probably replace the onClick listener altogether
-        // check whether cluster is spiderfied: "omsData.containsKey(cluster)"
-        if (omsData.containsKey(cluster) && !keepSpiderfied){
-            unspiderfy(cluster);
-        }
-        else {
-            List<MarkerData> nearbyMarkerData = new ArrayList<MarkerData>();
-            List<Marker> nonNearbyMarkers = new ArrayList<Marker>();
-            int nDist = nearbyDistance;
-            int pxSq = nDist * nDist;
-            Point mPt, markerPt = llToPt(cluster.getPosition());
-            markersInCluster = cluster.getMarkers();
-            displayedMarkers = gm.getDisplayedMarkers(); //could be very slow
-            List<Marker> markersToConsider = new ArrayList<Marker>();
-            markersToConsider.addAll(displayedMarkers); markersToConsider.addAll(markersInCluster);
-            LatLngBounds llb = gm.getProjection().getVisibleRegion().latLngBounds;
-            for (Marker markers_item : markersToConsider) {
-                if(!llb.contains(markers_item.getPosition()) || markers_item == cluster)
-                    continue;
-                mPt = proj.toScreenLocation(markers_item.getPosition());
-                if (ptDistanceSq(mPt,markerPt) < pxSq)
-                    nearbyMarkerData.add(new MarkerData(markers_item,mPt));
-                else
-                    nonNearbyMarkers.add(markers_item);
-            }
 
-            if (nearbyMarkerData.size() == 1) {// 1 => only the one clicked => none nearby
-                //trigger onMarkerClick event TODO Probably missing something here too. same as above
-            } else {
-                lastSpiderfiedCluster = cluster;
-                spiderfy(nearbyMarkerData,nonNearbyMarkers);
-                zoomLevelOnLastSpiderfy = gm.getCameraPosition().zoom;
+        if (isAnythingSpiderfied && !spiderfying){ // unspiderfy everything before spiderfying anything new
+            unspiderfyAll();
+        }
+        List<MarkerData> closeMarkers = new ArrayList<MarkerData>();
+        List<MarkerData> displayedFarMarkers   = new ArrayList<MarkerData>();
+        int nDist = nearbyDistance;
+        int pxSq = nDist * nDist;
+        Point mPt, markerPt = llToPt(cluster.getPosition());
+        List<Marker> tmpMarkersInCluster = new ArrayList<Marker>();
+        tmpMarkersInCluster.addAll(cluster.getMarkers());
+        markersInCluster.addAll(cluster.getMarkers());
+        /*
+        if (!spiderfying)
+            displayedMarkers = gm.getDisplayedMarkers(); //could be very slow
+        List<Marker> markersToConsider = new ArrayList<Marker>();
+        markersToConsider.addAll(displayedMarkers); markersToConsider.addAll(markersInCluster);
+        LatLngBounds llb = gm.getProjection().getVisibleRegion().latLngBounds;
+        for (Marker markers_item : markersToConsider) {
+            if(!llb.contains(markers_item.getPosition()) || markers_item == cluster)
+                continue;
+            mPt = proj.toScreenLocation(markers_item.getPosition());
+            if (ptDistanceSq(mPt,markerPt) < pxSq)
+                closeMarkers.add(new MarkerData(markers_item,mPt));
+            else
+                displayedFarMarkers.add(new MarkerData(markers_item,mPt));
+        }
+
+        if (closeMarkers.size() > 0) {// 0 => only the one clicked is displayed => none nearby
+            //TODO Probably missing something here
+        }
+        */
+
+        for (Marker markers_item : tmpMarkersInCluster) {
+            if (markers_item.isCluster()) {
+                recursiveAddMarkersToSpiderfy(markers_item);
             }
+            mPt = proj.toScreenLocation(markers_item.getPosition());
+            if (ptDistanceSq(mPt,markerPt) < pxSq)
+                closeMarkers.add(new MarkerData(markers_item,mPt));
+            else
+                displayedFarMarkers.add(new MarkerData(markers_item,mPt));
+        }
+
+        spiderfy(closeMarkers,displayedFarMarkers);
+        spiderfiedClusters.add(cluster);
+        zoomLevelOnLastSpiderfy = gm.getCameraPosition().zoom;
+    }
+
+    private void recursiveAddMarkersToSpiderfy(Marker markers_item) {
+        List<Marker> nestedMarkers = markers_item.getMarkers();
+        for (Marker nestedMarker : nestedMarkers) {
+            if (!nestedMarker.isCluster()) // inception.... (cluster within a cluster within a cl.....)
+                tryAddMarker(markersInCluster,nestedMarker);
+            else
+                recursiveAddMarkersToSpiderfy(markers_item);
         }
     }
 
     /** Corresponds to line 161 of original code.
      * Returns an array of markers within nearbyDistance pixels of marker — i.e. those that will be spiderfied when
-     * marker is clicked. If you pass true as the second argument, the search will stop when a single marker has been
-     * found. This is more efficient if all you want to know is whether there are any nearby markers.
+     * marker is clicked.
      * - *Don’t* call this method in a loop over all your markers, since this can take a very long time.
      * - The return value of this method may change any time the zoom level changes, and when any marker is added,
      *   moved, hidden or removed. Hence you’ll very likely want call it (and take appropriate action) every time the
@@ -367,8 +387,6 @@ public class OverlappingMarkerSpiderfier {
      * - Note also that this method relies on the map’s Projection object being available, and thus cannot be called
      *   until the map’s first idle event fires. *//*
     private List<Marker> markersNearMarker(Marker marker) {
-        try {waitForMapIdle();} catch (InterruptedException e){}
-
         int nDist = nearbyDistance;
         int pxSq = nDist * nDist;
         Point markerPt = proj.toScreenLocation(marker.getPosition()); //using android maps api instead of llToPt and ptToLl
@@ -394,7 +412,7 @@ public class OverlappingMarkerSpiderfier {
     /**
      * Corresponds to line 176 of original code
      *
-     * Returns an array of all markersInCluster that are near one or more other markersInCluster — i.e. those will be
+     * Returns an array of all markers that are near one or more other markersInCluster — i.e. those will be
      * spiderfied when clicked.
      * This method is several orders of magnitude faster than looping over all markersInCluster calling markersNearMarker
      * (primarily because it only does the expensive business of converting lat/lons to pixel coordinates once per marker).
@@ -402,7 +420,7 @@ public class OverlappingMarkerSpiderfier {
      * @param marker
      * @return
      */
-    /*
+/*
     private List<Marker> markersNearAnyOtherMarker(Marker marker){
         try {waitForMapIdle();} catch (InterruptedException e){}
 
@@ -486,15 +504,28 @@ public class OverlappingMarkerSpiderfier {
 */
     /** Corresponds to line 207 of original code*/
     // renamed original inputs as follows: markersData => clusteredMarkersData; nonNearbyMarkers => nearbyMarkers
-    private void spiderfy(List<MarkerData> clusteredMarkersData,List<Marker> nearbyMarkers){
-                                           //TODO: find something to do with nearbyMarkers
-        if (clusteredMarkersData.size() == 0 || markersInCluster.size() == 0)
-            return; //cant' work with empty arrays...
-        spiderfying = true; // TODO: see if needed for anything
-        int numFeet = clusteredMarkersData.size(); // numFeet is representative of the amount of markers in the cluster
+    private void spiderfy(List<MarkerData> clusteredMarkersData,List<MarkerData> nearbyMarkers){
+//        List<MarkerData> listToUse;
+//        if ( clusteredMarkersData.size() == 0 && markersInCluster.size() > 0){ //could happen when GoogleMap.clusterSize is too large
+////            listToUse = nearbyMarkers;
+//            listToUse = new ArrayList<MarkerData>();
+//            listToUse.addAll(nearbyMarkers);
+//            for (MarkerData markerData : nearbyMarkers) {
+//                if (markerData.marker.isCluster()){
+////                  spiderfiedClusters.add(markerData.marker);
+//                    listToUse.remove(markerData);
+//                }
+//            }
+//        }
+//        else
+//            listToUse=clusteredMarkersData;
+        List<MarkerData> listToUse = new ArrayList<MarkerData>();
+        listToUse.addAll(clusteredMarkersData); listToUse.addAll(nearbyMarkers); //could be terrible... :P
+        spiderfying = true;
+        int numFeet = listToUse.size(); // numFeet is representative of the amount of markers in the cluster
         // Compute the positions of the clustered markers after spiderfication
         List<Point> nearbyMarkerPts = new ArrayList<Point>(numFeet);
-        for (MarkerData markerData : clusteredMarkersData) {
+        for (MarkerData markerData : listToUse) {
             nearbyMarkerPts.add(markerData.markerPt);
         }
         Point bodyPt = ptAverage(nearbyMarkerPts);
@@ -506,12 +537,10 @@ public class OverlappingMarkerSpiderfier {
         else
             footPts=generatePtsCircle(numFeet,bodyPt);
 
-        List<Marker> spiderfiedMarkers = new ArrayList<Marker>();
         for (int ind =0; ind < numFeet; ind++){
             Point footPt = footPts.get(ind);
             LatLng footLl = ptToLl(footPt);
-
-            MarkerData nearestMarkerData = clusteredMarkersData.get(ind);
+            MarkerData nearestMarkerData = listToUse.get(ind);
             Marker clusterNearestMarker = nearestMarkerData.marker;
             Polyline leg = gm.addPolyline(new PolylineOptions()
                     .add(clusterNearestMarker.getPosition(), footLl)
@@ -526,10 +555,12 @@ public class OverlappingMarkerSpiderfier {
             clusterNearestMarker.animatePosition(footLl);
             // set clusterNearestMarker zIndex is unavailable in android :\
 
-            spiderfiedMarkers.add(clusterNearestMarker);
+            spiderfiedUnclusteredMarkers.add(clusterNearestMarker);
+
         }
+        isAnythingSpiderfied=true;
         spiderfying=false;
-        //  trigger("spiderfy",spiderfiedMarkers,nearbyMarkers); // ?! Todo: find an idea what to do with this.
+        //  trigger("spiderfy",spiderfiedUnclusteredMarkers,nearbyMarkers); // ?! Todo: find an idea what to do with this.
     }
 
     /**
@@ -538,23 +569,30 @@ public class OverlappingMarkerSpiderfier {
      * Returns any spiderfied markers to their original positions, and triggers any listeners you may have set for this event.
      * Unless no markersInCluster are spiderfied, in which case it does nothing.
      */
-    private Marker unspiderfy(Marker clusterToUnspiderfy){ //241
+    private Marker unspiderfy(Marker markerToUnspiderfy){ //241
         // this function has to return everything to its original state
-        if (clusterToUnspiderfy!=null){ //Todo: make sure that this "if" is needed at all
+        if (markerToUnspiderfy!=null){ //Todo: make sure that this "if" is needed at all
             unspiderfying=true;
-            List<Marker> unspiderfiedMarkers = new ArrayList<Marker>(), nonNearbyMarkers = new ArrayList<Marker>();
-            for (Marker marker : markersInCluster) {
-                if(omsData.containsKey(marker)){// ignoring the possibility that (params.markerNotToMove != null)
-                    marker.setPosition(omsData.get(marker).leg(null).getUsualPosition());
-                    marker.setClusterGroup(ClusterGroup.DEFAULT);
+            if(markerToUnspiderfy.isCluster()){
+                List<Marker> unspiderfiedMarkers = new ArrayList<Marker>(), nonNearbyMarkers = new ArrayList<Marker>();
+                for (Marker marker : markersInCluster) {
+                    if(omsData.containsKey(marker)){// ignoring the possibility that (params.markerNotToMove != null)
+                        marker.setPosition(omsData.get(marker).leg(null).getUsualPosition());
+                        marker.setClusterGroup(ClusterGroup.DEFAULT);
+                        //skipped lines 250-254 from original code
+                        unspiderfiedMarkers.add(marker);
+                    } else
+                        nonNearbyMarkers.add(marker);
+                }
+            } else { // if a regular (non-cluster) marker
+                markerToUnspiderfy.setPosition(omsData.get(markerToUnspiderfy).leg(null).getUsualPosition());
+                markerToUnspiderfy.setClusterGroup(ClusterGroup.DEFAULT);
                     //skipped lines 250-254 from original code
-                    unspiderfiedMarkers.add(marker);
-                } else
-                    nonNearbyMarkers.add(marker);
+                // spiderfiedUnclusteredMarkers.remove(markerToUnspiderfy); <== will be done by the calling function
             }
             unspiderfying=false;
         }
-        return clusterToUnspiderfy; // return self, for chaining
+        return markerToUnspiderfy; // return self, for chaining
     }
 
     private int ptDistanceSq(Point pt1, Point pt2){ /** Corresponds to line 264 of original code*/
@@ -619,7 +657,7 @@ public class OverlappingMarkerSpiderfier {
     }
 
     public boolean isAnythingSpiderfied() {
-        return lastSpiderfiedCluster!=null;
+        return spiderfiedClusters !=null;
     }
 
     //Right now method only checks the structure + names
@@ -639,5 +677,26 @@ public class OverlappingMarkerSpiderfier {
             else throw new IllegalArgumentException("Invalid argument name.");
         }
         return true;
+    }
+
+    private void unspiderfyAll() {
+        for (Marker lastSpiderfiedCluster : spiderfiedClusters) {
+            unspiderfy(lastSpiderfiedCluster);
+        }
+        for (Marker marker : spiderfiedUnclusteredMarkers) {
+            unspiderfy(marker);
+        }
+        initMarkerArrays(); //hopefully, return to the initial state
+        isAnythingSpiderfied=false;
+    }
+
+    boolean tryAddMarker(Collection<Marker> collection, Marker obj ){
+        if (collection.contains(obj))
+            return false;
+        else {
+            collection.add(obj);
+            return true;
+        }
+
     }
 }
