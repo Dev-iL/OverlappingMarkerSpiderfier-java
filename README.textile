@@ -31,26 +31,22 @@ h4. Notes
 
 * This class Overrides the map's @OnCameraChangeListener@. If you have your own listener, just move the code from the class' built-in listener to your own.
 * The developer is assumed to be working with *android-maps-extensions*.
-* It is highly advised to control the zoom at which spiderfication occurs (i.e. switch the @OnMarkerClickListener@ 's behavior from __zoom__ to __spiderfication__ only after a certain zoom level). An example is found "here":github.com/Gid-CTO/OverlappingMarkerSpiderfier-java/issues/2.
-
-h3. Expected Functionality
-
+* It is highly advised to control the zoom at which spiderfication occurs (i.e. switch the @OnMarkerClickListener@ 's behavior from __zoom__ to __spiderfication__ only after a certain zoom level). 
 * Spiderfication *only works* on @instanceof ClusterMarker@.
 * Unspiderfication is performed on zoom level change (hence the aforementioned listener override) & if another cluster is clicked.
 
-h4. Before & After:
+h4. Preview
 
-!http://imagizer.imageshack.us/v2/800x600q90/842/7tv8.png!__!http://imagizer.imageshack.us/v2/800x600q90/208/zaun.png!
 Watch several demos on YouTube:
 <a href="https://www.youtube.com/playlist?list=PL7e-Ll9blEselDPmq-MrR46LZut0H9fL5"
 target="_blank"><img src="http://cdn.androidpolice.com/wp-content/uploads/2013/02/nexusae0_130.png" 
 alt="See the spiderfication demo playlist here." width="352" height="172" border="10" /></a>
 
-h3. Known Bugs
+h3 Known Bugs
 
 * For certain combinations of @GoogleMap.clusterSize@ and @CameraPosition.zoom@ clusters are only partially clusterfied (i.e. the result is a cluster with one ore more polylines sticking out of it).
 
-h3. Needed Work
+h3. TODO
 
 * Rewrite the class keeping only functional methods.
 
