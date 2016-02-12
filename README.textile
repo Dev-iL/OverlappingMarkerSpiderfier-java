@@ -1,30 +1,22 @@
 h1. Overlapping Marker Spiderfier for Android (Android Maps Extensions)
 
 This code is an attempt to reproduce an excellent code by "jawj":https://github.com/jawj, in Java, intended to be used on *Android*, alongside the excellent "android-maps-extensions":https://code.google.com/p/android-maps-extensions/.
+
+h3. THIS IS A PROOF OF CONCEPT VERSION
  
 For a *thorough* documentation please refer to "jawj's OverlappingMarkerSpiderfier repository":https://github.com/jawj/OverlappingMarkerSpiderfier/blob/master/README.textile.
 
-The code was last updated on *01-March-14*.
-
-The code was written while adding pyrotechnics to the "Blue Card Android app":https://play.google.com/store/apps/details?id=gidutz.soft.bluecard I'm working on.
-(At the time of writing, this and many other features are not yet found in the version released on Google Play.)
+The actual code was last updated on *12-March-2014*.
  
 h2. Disclaimer
 
-h3. THIS IS AN ALPHA VERSION
-
 Before proceeding to read \ use the code, please consider the following:
 
-# I have limited experience with Java, Android and the various Maps APIs. Being a __Mechanical__ Engineer I worked quite a lot on MATLAB, but hey - I'm not in Kansas anymore.
-# I had absolutely *zero* knowledge in JavaScript (__JS__) and CoffeeScript (__CS__) when undertaking this. It is _very_ likely that *some things got lost in translation*.
+# Since the original library is written in JavaScript (__JS__), and considering I had absolutely *zero* knowledge in JS and in CoffeeScript (__CS__) when undertaking this, it is _very_ likely that *some things got lost in translation*.
 # I was following the original flow of the CS (more or less). I pretty much worked blindly without much filtering of what's relevant to Android and what's not so *expect some redundant code*. The upside of this method is, however, that the original comments\documentation apply quite well.
 # Any relation between what you are about to see and "_proper_" Java code is purely coincidental. Make sure you're sitting before proceeding.
 # The code is absolutely unoptimized in terms of memory\performance.
 # Any functionality customizations (such as Polyline properties, radii, etc.) must currently be changed via hardcoding.
-# This code was tested in the following conditions:
-#* Device: Galaxy Nexus running a CyanogenMod 11 nightly. *Expect the code to require modifications for other devices*.
-#* Map clutter: ~500 markers.
-#* Largest cluster: 8 items.
 # You will have to put up with my sarcasm.
 
 Having managed your expectations, this code:
@@ -33,22 +25,21 @@ Having managed your expectations, this code:
 
 h2. How to Use
 
-# Copy the .java file into your project
-# Update the package name.
-# Instantiate with a @GoogleMap@ object like so: @oms = new OverlappingMarkerSpiderfier(mMap);@
-# Pass @oms@ a @com.androidmapsextensions.Marker@ object like so: @oms.spiderListener(marker);@.
-# That's it!
+See sample app. Make sure you have a valid Google Maps API key.
 
 h4. Notes
+
 * This class Overrides the map's @OnCameraChangeListener@. If you have your own listener, just move the code from the class' built-in listener to your own.
 * The developer is assumed to be working with *android-maps-extensions*.
 * It is highly advised to control the zoom at which spiderfication occurs (i.e. switch the @OnMarkerClickListener@ 's behavior from __zoom__ to __spiderfication__ only after a certain zoom level). An example is found "here":github.com/Gid-CTO/OverlappingMarkerSpiderfier-java/issues/2.
 
 h3. Expected Functionality
+
 * Spiderfication *only works* on @instanceof ClusterMarker@.
 * Unspiderfication is performed on zoom level change (hence the aforementioned listener override) & if another cluster is clicked.
 
 h4. Before & After:
+
 !http://imagizer.imageshack.us/v2/800x600q90/842/7tv8.png!__!http://imagizer.imageshack.us/v2/800x600q90/208/zaun.png!
 Watch several demos on YouTube:
 <a href="https://www.youtube.com/playlist?list=PL7e-Ll9blEselDPmq-MrR46LZut0H9fL5"
@@ -56,6 +47,7 @@ target="_blank"><img src="http://cdn.androidpolice.com/wp-content/uploads/2013/0
 alt="See the spiderfication demo playlist here." width="352" height="172" border="10" /></a>
 
 h3. Known Bugs
+
 * For certain combinations of @GoogleMap.clusterSize@ and @CameraPosition.zoom@ clusters are only partially clusterfied (i.e. the result is a cluster with one ore more polylines sticking out of it).
 
 h3. Needed Work
